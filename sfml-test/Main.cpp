@@ -23,7 +23,7 @@ int main()
     sf::Uint8* pixels = new sf::Uint8[window_width * window_height * 4]; // * 4 because pixels have 4 components (RGBA)
     
     float input_radius = 3;
-    const int point_density = 1000;
+    const int point_density = 3000;
 
     vector<sf::Vector2f> points;
 
@@ -37,11 +37,20 @@ int main()
 
     // math function
     for (auto &point : points) {
-        point *= 2.f;
-        point.x += ((((rand() * 1.0) / RAND_MAX) * 2) - 1) * 20;
-        point.x += cos(point.x);
-        point.y += cos(point.y);
+        float x = point.x;
+        float y = point.y;
 
+
+        float pdj_a = 0.1;
+        float pdj_b = 1.9;
+        float pdj_c = -0.8;
+        float pdj_d = -1.2;
+
+        x = 1 * (sin(pdj_a * point.y) - cos(pdj_b * point.x));
+        y = 1 * (sin(pdj_c * point.x) - cos(pdj_d * point.y));
+
+        point.x = x;
+        point.y = y;
     }
 
 
@@ -75,10 +84,14 @@ int main()
             continue;
         }
 
-        pixels[(nx + ny * window_width) * 4] -= 50; // R?
-        pixels[(nx + ny * window_width) * 4 + 1] -= 50; // G?
-        pixels[(nx + ny * window_width) * 4 + 2] -= 50; // B?
-        pixels[(nx + ny * window_width) * 4 + 3] -= 50; // A?
+
+        if (pixels[(nx + ny * window_width) * 4] > 0) {
+
+            pixels[(nx + ny * window_width) * 4] -= 1; // R?
+            pixels[(nx + ny * window_width) * 4 + 1] -= 1; // G?
+            pixels[(nx + ny * window_width) * 4 + 2] -= 1; // B?
+            pixels[(nx + ny * window_width) * 4 + 3] -= 1; // A?
+        }
     }
 
     
