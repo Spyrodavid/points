@@ -1,9 +1,8 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
 #include <vector>
-#include "Solver.hpp"
-#include "Renderer.hpp"
 #include <string> 
+#include <cmath>
 
 using namespace std;
 
@@ -20,12 +19,16 @@ int main()
     texture.create(window_width, window_height);
     sprite.setTexture(texture);
 
-    sf::Uint8* pixels = new sf::Uint8[window_width * window_height * 4]; // * 4 because pixels have 4 components (RGBA)
-    
+    int screen_pixels = window_width * window_height;
+
+    sf::Uint8* pixels = new sf::Uint8[screen_pixels * 4]; // * 4 because pixels have 4 components (RGBA)
+
     float input_radius = 3;
     const int point_density = 3000;
 
     vector<sf::Vector2f> points;
+    sf::Vector3f* discreet_points = new sf::Vector3f[screen_pixels]; // * 4 because pixels have 4 components (RGBA)
+
 
     for (float x = -input_radius; x <= input_radius + .001; x += (input_radius * 2) / (point_density - 1))
     {
@@ -35,38 +38,27 @@ int main()
         }
     }
 
-    // math function
-    for (auto &point : points) {
-        float x = point.x;
-        float y = point.y;
 
+    int maximum_points = INT_MIN;
+    int minimum_points = INT_MAX;
+    // Count Points
+    for (auto point : points) {
+
+        // Math function
+        sf::Vector2f old_point(point);
 
         float pdj_a = 0.1;
         float pdj_b = 1.9;
         float pdj_c = -0.8;
         float pdj_d = -1.2;
 
-        x = 1 * (sin(pdj_a * point.y) - cos(pdj_b * point.x));
-        y = 1 * (sin(pdj_c * point.x) - cos(pdj_d * point.y));
-
-        point.x = x;
-        point.y = y;
-    }
+        point.x = 1 * (cos(pdj_a * old_point.y) + cos(pdj_b * old_point.x));
+        point.y = 1 * (sin(pdj_c * old_point.x) - cos(pdj_d * point.y));
 
 
-    for (size_t i = 0; i < window_width * window_height * 4; i++)
-    {
-        pixels[i] = 255;
-    }
-
-
-    for (auto point : points) {
+        // Count points
         float x = point.x;
         float y = point.y;
-
-       /* cout << x << "  ";
-        cout << y << "  ";
-        cout << endl;*/
 
         x += input_radius;
         y += input_radius;
@@ -84,22 +76,68 @@ int main()
             continue;
         }
 
-        if (pixels[(nx + ny * window_width) * 4] > 0) {
-            pixels[(nx + ny * window_width) * 4] -= 1; // R?
-            pixels[(nx + ny * window_width) * 4 + 1] -= 1; // G?
-            pixels[(nx + ny * window_width) * 4 + 2] -= 1; // B?
-            pixels[(nx + ny * window_width) * 4 + 3] -= 1; // A?
+        auto total_vec = point - old_point;
+        
+        discreet_points[(nx + ny * window_width)] += {total_vec.x, total_vec.y, 1};
+      
+    }
+
+
+    // Find min and max
+    for (int i = 0; i < screen_pixels; i++) {
+
+        if (maximum_points < discreet_points[i].z) {
+            maximum_points = discreet_points[i].z;
         }
 
-
-        if (pixels[(nx + ny * window_width) * 4] > 0) {
-
-            pixels[(nx + ny * window_width) * 4] -= 1; // R?
-            pixels[(nx + ny * window_width) * 4 + 1] -= 1; // G?
-            pixels[(nx + ny * window_width) * 4 + 2] -= 1; // B?
-            pixels[(nx + ny * window_width) * 4 + 3] -= 1; // A?
+        if (minimum_points > discreet_points[i].z) {
+            minimum_points = discreet_points[i].z;
         }
     }
+
+    std::cout << minimum_points << endl;
+    std::cout << maximum_points << endl;
+
+
+    // white screen
+    for (size_t i = 0; i < screen_pixels * 4; i++)
+    {
+        pixels[i] = 255;
+    }
+
+
+    // draw points
+    for (size_t i = 0; i < screen_pixels; i++)
+    {
+        int hits = discreet_points[i].z;
+
+        float hits_float01 = log(hits * 1.0 + 1) / log(maximum_points);
+
+        int color_ammt = floor(hits_float01 * 255);
+
+        float angle = atan2(discreet_points[i].y, discreet_points[i].x);
+        
+
+        float pi = 3.1415926;
+        float r = 0;
+        float b = 0;
+        //cout << angle;
+        if (angle > pi) {
+            r = angle * hits;
+        }
+        else {
+            b = -angle * hits;
+        }
+        
+        //int min_val = min(static_cast<int> (discreet_points[i]), 255);
+        if (hits > 0) {
+            pixels[i * 4] -= color_ammt ; // R?
+            pixels[i * 4 + 1] -= color_ammt / r; // G?
+            pixels[i * 4 + 2] -= color_ammt / b; // B?
+        }
+        
+    }
+
 
     
     texture.update(pixels);
@@ -140,4 +178,16 @@ int main()
     }
 
     return 0;
+}
+
+float length(sf::Vector3f vec) {
+    return sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
+}
+
+float length(sf::Vector2f vec) {
+    return sqrt(vec.x * vec.x + vec.y * vec.y);
+}
+
+sf::Vector2f normalize(sf::Vector2f vec) {
+    return vec / length(vec);
 }
