@@ -84,6 +84,13 @@ int main()
             continue;
         }
 
+        if (pixels[(nx + ny * window_width) * 4] > 0) {
+            pixels[(nx + ny * window_width) * 4] -= 1; // R?
+            pixels[(nx + ny * window_width) * 4 + 1] -= 1; // G?
+            pixels[(nx + ny * window_width) * 4 + 2] -= 1; // B?
+            pixels[(nx + ny * window_width) * 4 + 3] -= 1; // A?
+        }
+
 
         if (pixels[(nx + ny * window_width) * 4] > 0) {
 
