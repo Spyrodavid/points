@@ -1,10 +1,12 @@
 #include <SFML/Graphics.hpp>
+#include <chrono>
 #include <iostream>
 #include <vector>
 #include <string> 
 #include <cmath>
 
 using namespace std;
+using namespace chrono;
 
 int main()
 {
@@ -24,11 +26,14 @@ int main()
     sf::Uint8* pixels = new sf::Uint8[screen_pixels * 4]; // * 4 because pixels have 4 components (RGBA)
 
     float input_radius = 3;
-    const int point_density = 3000;
+    const int point_density = 7000;
 
     vector<sf::Vector2f> points;
     sf::Vector3f* discreet_points = new sf::Vector3f[screen_pixels]; // * 4 because pixels have 4 components (RGBA)
+    
+    auto end = std::chrono::system_clock::now();
 
+    auto start_make_points = high_resolution_clock::now();
 
     for (float x = -input_radius; x <= input_radius + .001; x += (input_radius * 2) / (point_density - 1))
     {
@@ -38,22 +43,32 @@ int main()
         }
     }
 
+    cout << "Duration points being made took in s: " << (duration_cast<microseconds> (high_resolution_clock::now() - start_make_points)).count() / pow(10., 6.) << endl;
+
+
+    auto start_math = high_resolution_clock::now();
 
     int maximum_points = INT_MIN;
     int minimum_points = INT_MAX;
     // Count Points
     for (auto point : points) {
 
+
         // Math function
         sf::Vector2f old_point(point);
+        old_point += sf::Vector2f(rand() * 0.1 / RAND_MAX, rand() * 0.1 / RAND_MAX);
 
-        float pdj_a = 0.1;
+
+        float pdj_a = 1.1;
         float pdj_b = 1.9;
         float pdj_c = -0.8;
-        float pdj_d = -1.2;
+        float pdj_d = -.8;
 
-        point.x = 1 * (cos(pdj_a * old_point.y) + cos(pdj_b * old_point.x));
-        point.y = 1 * (sin(pdj_c * old_point.x) - cos(pdj_d * point.y));
+        
+
+        point.x = 1 * (cos(pdj_a * old_point.x) + log(tan(tan(pdj_b * old_point.y))));
+        point.y = 1 * (log(pdj_c * point.x) + tan(pdj_d * old_point.y));
+
 
 
         // Count points
@@ -82,6 +97,9 @@ int main()
       
     }
 
+    cout << "Duration math took in s: " << (duration_cast<microseconds> (high_resolution_clock::now() - start_math)).count() / pow(10., 6.) << endl;
+
+
 
     // Find min and max
     for (int i = 0; i < screen_pixels; i++) {
@@ -99,12 +117,21 @@ int main()
     std::cout << maximum_points << endl;
 
 
-    // white screen
+    auto start_clear = high_resolution_clock::now();
+
+    // black screen
     for (size_t i = 0; i < screen_pixels * 4; i++)
     {
         pixels[i] = 255;
+        pixels[i + 1] = 255;
+        pixels[i + 2] = 255;
+        pixels[i + 3] = 0;
     }
 
+    cout << "Duration clear took in s: " << (duration_cast<microseconds> (high_resolution_clock::now() - start_clear)).count() / pow(10., 6.) << endl;
+
+
+    auto start_draw = high_resolution_clock::now();
 
     // draw points
     for (size_t i = 0; i < screen_pixels; i++)
@@ -117,27 +144,35 @@ int main()
 
         float angle = atan2(discreet_points[i].y, discreet_points[i].x);
         
-
+        angle = log(angle);
         float pi = 3.1415926;
         float r = 0;
         float b = 0;
+        float g = 0;
         //cout << angle;
         if (angle > pi) {
             r = angle * hits;
         }
         else {
-            b = -angle * hits;
+            b = -angle * hits * 100;
         }
+        g = (r + angle);
+        b = r + b;
+        r = log(sqrt(b + g));
+
+
         
-        //int min_val = min(static_cast<int> (discreet_points[i]), 255);
-        if (hits > 0) {
-            pixels[i * 4] -= color_ammt ; // R?
-            pixels[i * 4 + 1] -= color_ammt / r; // G?
-            pixels[i * 4 + 2] -= color_ammt / b; // B?
-        }
+        pixels[i * 4] = color_ammt;// / g; // R?
+        pixels[i * 4 + 1] = color_ammt;// / r; // G?
+        pixels[i * 4 + 2] = color_ammt;// / b; // B?
+
+        //pixels[i * 4] = color_ammt / g; // r?
+        //pixels[i * 4 + 1] = color_ammt / r; // g?
+        //pixels[i * 4 + 2] = color_ammt / b; // b?
         
     }
 
+    cout << "Duration draw took in s: " << (duration_cast<microseconds> (high_resolution_clock::now() - start_draw)).count() / pow(10., 6.) << endl;
 
     
     texture.update(pixels);
