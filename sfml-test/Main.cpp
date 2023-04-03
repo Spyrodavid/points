@@ -57,12 +57,12 @@ int main()
 
     window.display();
 
-    string file_name; //+ std::to_string(rand() % 1000);
+    string file_name; 
     cout << "Enter name for image: ";
     getline(cin, file_name);
     sf::Image out_image;
     out_image.create(window_width, window_height, pixels);
-    out_image.saveToFile("C:\\Users\\spyro\\source\\repos\\PointSFML\\sfml-test\\Images\\" + file_name + ".png");
+    out_image.saveToFile("C:\\Users\\spyro\\source\\repos\\PointSFML\\sfml-test\\Images\\" + file_name + std::to_string(rand() % 10) + ".png");
 
     int t = 0;
 
@@ -91,7 +91,7 @@ int main()
             for (size_t y = 0; y < window_height; y++)
             {
 
-                float noiseVal = worley.noise(x, y) * 255;
+                float noiseVal = worley.noise(x + t * t, y) * 255;
                 pixels[(x + y * window_width) * 4] = noiseVal;
                 pixels[(x + y * window_width) * 4 + 1] = noiseVal;
                 pixels[(x + y * window_width) * 4 + 2] = noiseVal;
